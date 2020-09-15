@@ -47,7 +47,7 @@ class LateXWorkshopPdfViewer implements ILatexWorkshopPdfViewer {
         this.pdfFilePath = pack.pdfFilePath
 
         this.viewerHistory = new ViewerHistory(this)
-        const server = `ws://${window.location.hostname}:${window.location.port}`
+        const server = String(window.location).replace(/^http(.*)\/viewer\.html.*$/, 'ws$1')
         this.server = server
         this.socket = new WebSocket(server)
         this.synctex = new SyncTex(this)
