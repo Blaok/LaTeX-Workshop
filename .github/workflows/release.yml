@@ -1,0 +1,45 @@
+on:
+  push:
+    tags:
+      - v*\+code-server
+
+name: Upload Release Asset
+
+jobs:
+  build:
+    name: Upload Release Asset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "12"
+      - uses: actions/checkout@v2
+      - name: Build Package
+        id: build_package
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends jq moreutils
+          jq '.version="'${GITHUB_REF#refs/tags/v}'"' <package.json | sponge package.json
+          npm install --no-optional
+          npm run release
+          echo ::set-output name=asset_name::$(ls *.vsix)
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: Patched latex-workshop for code-server
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.build_package.outputs.asset_name }}
+          asset_name: ${{ steps.build_package.outputs.asset_name }}
+          asset_content_type: application/vsix
